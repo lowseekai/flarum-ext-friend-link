@@ -27,6 +27,8 @@ return [
         }),
 
     (new Extend\Routes('api'))
+        // The frontend store requests the JSON:API resource type directly.
+        ->get('/friendLinkList', 'FriendLink.resourceList', Controllers\GetListController::class)
         ->get('/friend_link_list', 'FriendLink.list', Controllers\GetListController::class)
         ->post('/nodeloc/friend_link/add', 'FriendLink.create', Controllers\AddController::class)
         ->post('/nodeloc/friend_link/hide', 'FriendLink.hide', Controllers\HideController::class)
