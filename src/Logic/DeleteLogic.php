@@ -7,37 +7,26 @@ use Nodeloc\FriendLink\Model\FriendLink;
 
 class DeleteLogic
 {
-    public function save($actor, $data)
+    public function save($actor, $data): array
     {
-        $msg = ["status" => false, "msg" => ""];
-        $showId = isset($data["show_id"]) ? $data["show_id"] : 0;
+        $showId = (int) ($data['show_id'] ?? 0);
 
-        if (!$showId) {
-            return $msg;
+        if (! $showId) {
+            throw new ValidationException(['msg' => '请选择有效的友情链接。']);
         }
 
-        $cardStatus = FriendLink::where([
-            "id" => $showId
-        ])->first();
+        $friendLink = FriendLink::find($showId);
 
-        if (!$cardStatus) {
-            throw new ValidationException(['msg' => "您选择的内容有误"]);
+        if (! $friendLink) {
+            throw new ValidationException(['msg' => '友情链接不存在。']);
         }
 
-        // 检查用户是否为管理员或内容的创建者
-        $isAdmin = $actor->isAdmin();
-
-        if ($cardStatus->user_id != $actor->id && !$isAdmin) {
-            throw new ValidationException(['msg' => "您只能删除自己的内容"]);
+        if ((int) $friendLink->user_id !== (int) $actor->id && ! $actor->isAdmin()) {
+            throw new ValidationException(['msg' => '您只能删除自己分享的链接。']);
         }
 
-        // 删除记录
-        FriendLink::where([
-            "id" => $showId,
-        ])->delete();
+        $friendLink->delete();
 
-        $msg["status"] = true;
-        $msg["msg"] = "内容已成功删除";
-        return $msg;
+        return ['status' => true, 'msg' => '友情链接已删除。'];
     }
 }

@@ -14,4 +14,9 @@ class FriendLink extends AbstractModel
     {
         return $this->belongsTo(User::class);
     }
+
+    public function actions()
+    {
+        return $this->hasMany(FriendLinkAction::class, 'friend_link_id');
+    }
 }

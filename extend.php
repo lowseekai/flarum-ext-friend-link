@@ -1,22 +1,12 @@
 <?php
 
-/*
- * This file is part of nodeloc/friend-link.
- *
- * Copyright (c) 2023 Emin.lin.
- *
- * For the full copyright and license information, please view the LICENSE.md
- * file that was distributed with this source code.
- */
-
 namespace Nodeloc\FriendLink;
 
 use Flarum\Extend;
-use Nodeloc\FriendLink\Filter\GetListFilter;
+use Flarum\User\User;
+use Nodeloc\FriendLink\Api\Resource\FriendLinkResource;
 use Nodeloc\FriendLink\Model\FriendLink;
 use Nodeloc\FriendLink\Notification\LikedNotification;
-use Nodeloc\FriendLink\Query\GetListQuery;
-use Nodeloc\FriendLink\Serializer\GetListSerializer;
 
 return [
     (new Extend\Frontend('forum'))
@@ -28,14 +18,13 @@ return [
         ->css(__DIR__.'/less/admin.less'),
     new Extend\Locales(__DIR__.'/locale'),
 
-    (new Extend\Filter(GetListFilter::class))
-        ->addFilter(GetListQuery::class),
+    // Register the resource so Flarum 2 can serialize friend-link notifications.
+    new Extend\ApiResource(FriendLinkResource::class),
 
-    //数据关联用户
     (new Extend\Model(User::class))
         ->relationship('friendLinkList', function ($user) {
-            return $user->hasOne(FriendLink::class, 'uid');
-    }),
+            return $user->hasOne(FriendLink::class, 'user_id');
+        }),
 
     (new Extend\Routes('api'))
         ->get('/friend_link_list', 'FriendLink.list', Controllers\GetListController::class)
@@ -47,5 +36,5 @@ return [
         ->post('/nodeloc/friend_link/view', 'FriendLink.view', Controllers\ViewAddController::class),
 
     (new Extend\Notification())
-        ->type(LikedNotification::class, GetListSerializer::class, ['alert']),
+        ->type(LikedNotification::class, ['alert']),
 ];

@@ -1,3 +1,4 @@
+import app from 'flarum/forum/app';
 import Notification from 'flarum/forum/components/Notification';
 
 export default class LikeNotification extends Notification {
@@ -12,16 +13,9 @@ export default class LikeNotification extends Notification {
   content() {
     const notification = this.attrs.notification;
     const user = notification.fromUser();
+
     return app.translator.trans('nodeloc-friend-link.forum.notification.like', {
-        user,
+      user,
     });
-  }
-
-  excerpt() {
-
-    return (
-      <div>
-      </div>
-    );
   }
 }

@@ -1,56 +1,51 @@
-
+import app from 'flarum/forum/app';
 import Modal from 'flarum/common/components/Modal';
 import Button from 'flarum/common/components/Button';
-import Alert from 'flarum/common/components/Alert';
-
 
 export default class DeleteModal extends Modal {
-    oninit(vnode) {
-        super.oninit(vnode);
-        this.show_id = vnode.attrs.show_id;
-    }
+  oninit(vnode) {
+    super.oninit(vnode);
+    this.showId = vnode.attrs.show_id;
+    this.state = vnode.attrs.state;
+  }
 
-    title() {
-        return "是否删除链接";
-    }
+  title() {
+    return app.translator.trans('nodeloc-friend-link.forum.modal.delete_title');
+  }
 
-    className() {
-        return 'HideCardLinkModal Modal--small';
-    }
+  className() {
+    return 'FriendLinkActionModal Modal--small';
+  }
 
-    content() {
-        return(
-            <div className="Modal-footer">
-                 <Button
-                    className={'Button Button--primary m-r-10'}
-                    onclick = {()=>this.deleteReq(this.show_id)}
-                >
-                    确定
-                </Button>
-                <Button
-                    className={'Button'}
-                    onclick = {()=>{this.hide()}}
-                >
-                    取消
-                </Button>
-            </div>
-        )
-    }
+  content() {
+    return (
+      <div className="Modal-footer">
+        <Button className="Button Button--primary" loading={this.loading} onclick={() => this.deleteLink()}>
+          {app.translator.trans('nodeloc-friend-link.forum.modal.confirm_button')}
+        </Button>
+        <Button className="Button" disabled={this.loading} onclick={() => this.hide()}>
+          {app.translator.trans('nodeloc-friend-link.forum.modal.cancel_button')}
+        </Button>
+      </div>
+    );
+  }
 
-  deleteReq(show_id){
-        app
-        .request({
-            method: 'POST',
-            url: `${app.forum.attribute('apiUrl')}/nodeloc/friend_link/delete`,
-            body: { show_id },
-        })
-        .then(() => {
-            app.alerts.show(Alert, { type: 'success' }, "删除成功");
-            setTimeout(() => app.alerts.clear(), 3000);
-            this.hide()
-            var ui = document.getElementById("card-"+show_id);
-            ui.style.display="none";
-        })
+  deleteLink() {
+    if (this.loading) return;
 
-    }
+    this.loading = true;
+
+    app
+      .request({
+        method: 'POST',
+        url: `${app.forum.attribute('apiUrl')}/nodeloc/friend_link/delete`,
+        body: { show_id: this.showId },
+      })
+      .then(() => {
+        app.alerts.show({ type: 'success' }, app.translator.trans('nodeloc-friend-link.forum.alerts.delete_success'));
+        this.state?.refresh();
+        this.hide();
+      })
+      .finally(() => this.loaded());
+  }
 }

@@ -1,57 +1,31 @@
+import app from 'flarum/forum/app';
 import Component from 'flarum/common/Component';
 import Dropdown from 'flarum/common/components/Dropdown';
 import Button from 'flarum/common/components/Button';
-export default class FilterMenuItem extends Component {
-  oninit(vnode) {
-    super.oninit(vnode);
-    this.state = vnode.attrs.state;
-}
 
+export default class FilterMenuItem extends Component {
   view() {
-    const options = ['recent', 'score'];
-    const selected = app.search.cachedSearches.cardFilter?app.search.cachedSearches.cardFilter:"recent";
+    const options = [
+      ['recent', '-created_time'],
+      ['score', '-like_count'],
+    ];
+    const selected = this.attrs.state.getSort() === '-like_count' ? 'score' : 'recent';
 
     return (
-      Dropdown.component(
-        {
-          buttonClassName: 'Button',
-          label: app.translator.trans(
-            `nodeloc-friend-link.forum.filter.${selected}_label`
-          )
-        },
-        Object.keys(options).map((value) => {
-          const label = options[value];
-          const active = selected == label;
-
-          return Button.component(
-            {
-              icon: active ? 'fas fa-check' : true,
-              active: active,
-              onclick: () => {
-                if(label=="recent"){
-                  app.search.cachedSearches={cardFilter:"recent"}
-                  this.state.refreshParams({
-                    filter: {
-                        query: this.search
-                    },
-                    sort: '-created_time',
-                  })
-                }
-                if(label=="score"){
-                  app.search.cachedSearches={cardFilter:"score"}
-                  this.state.refreshParams({
-                    filter: {
-                        query: this.search
-                    },
-                    sort: '-like_count',
-                  })
-                }
-              },
-            },
-            app.translator.trans(`nodeloc-friend-link.forum.filter.${label}_label`)
-          );
-        })
-      )
+      <Dropdown buttonClassName="Button" label={app.translator.trans(`nodeloc-friend-link.forum.filter.${selected}_label`)}>
+        {options.map(([label, sort]) => (
+          <Button
+            icon={selected === label ? 'fas fa-check' : true}
+            active={selected === label}
+            onclick={() => {
+              const state = this.attrs.state;
+              state.refreshParams({ ...state.getParams(), sort }, 1);
+            }}
+          >
+            {app.translator.trans(`nodeloc-friend-link.forum.filter.${label}_label`)}
+          </Button>
+        ))}
+      </Dropdown>
     );
   }
 }
