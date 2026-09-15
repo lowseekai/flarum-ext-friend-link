@@ -1,5 +1,4 @@
 import PaginatedListState from 'flarum/common/states/PaginatedListState';
-import PaginatedListRequestParams from 'flarum/common/states/PaginatedListState';
 
 export default class FriendLinkListState extends PaginatedListState {
   constructor(params, page = 1) {

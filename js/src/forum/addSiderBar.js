@@ -1,8 +1,7 @@
-import { extend } from 'flarum/extend';
-import IndexPage from 'flarum/components/IndexPage';
-import LinkButton from 'flarum/components/LinkButton';
-import Dropdown from 'flarum/common/components/Dropdown';
-import Button from 'flarum/common/components/Button';
+import app from 'flarum/forum/app';
+import { extend } from 'flarum/common/extend';
+import IndexPage from 'flarum/forum/components/IndexPage';
+import LinkButton from 'flarum/common/components/LinkButton';
 
 export default function addSidebarNav() {
   extend(IndexPage.prototype, 'navItems', function (items) {
