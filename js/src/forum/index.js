@@ -1,6 +1,5 @@
 import app from 'flarum/forum/app';
 import { extend } from 'flarum/common/extend';
-import NotificationGrid from 'flarum/forum/components/NotificationGrid';
 import addSidebarNav from './addSiderBar';
 import IndexShowPage from './components/IndexShowPage';
 import FriendLinkListState from './states/FriendLinkListState';
@@ -19,7 +18,8 @@ app.initializers.add('nodeloc/flarum-ext-friend-link', () => {
 
   addSidebarNav();
 
-  extend(NotificationGrid.prototype, 'notificationTypes', (items) => {
+  // Flarum 2 registers NotificationGrid through the frontend registry.
+  extend('flarum/forum/components/NotificationGrid', 'notificationTypes', (items) => {
     items.add('friendLinkLiked', {
       name: 'friendLinkLiked',
       icon: 'fas fa-camera-retro',
