@@ -5,7 +5,6 @@ import IndexSidebar from 'flarum/forum/components/IndexSidebar';
 import Button from 'flarum/common/components/Button';
 import LoadingIndicator from 'flarum/common/components/LoadingIndicator';
 import Placeholder from 'flarum/common/components/Placeholder';
-import LogInModal from 'flarum/forum/components/LogInModal';
 import username from 'flarum/common/helpers/username';
 import FilterMenuItem from './FilterMenuItem';
 import UploadModal from './UploadModal';
@@ -15,6 +14,10 @@ import DeleteModal from './DeleteModal';
 
 export default class IndexShowPage extends Page {
   bodyClass = 'App--index';
+
+  openLoginModal() {
+    return app.modal.show(() => import('flarum/forum/components/LogInModal'));
+  }
 
   oninit(vnode) {
     super.oninit(vnode);
@@ -58,7 +61,7 @@ export default class IndexShowPage extends Page {
                 icon="fas fa-plus"
                 onclick={() => {
                   if (!app.session.user) {
-                    app.modal.show(LogInModal);
+                    this.openLoginModal();
                     return;
                   }
 
@@ -142,7 +145,7 @@ export default class IndexShowPage extends Page {
         aria-label={app.translator.trans('nodeloc-friend-link.forum.button.like')}
         onclick={() => {
           if (!app.session.user) {
-            app.modal.show(LogInModal);
+            this.openLoginModal();
             return;
           }
 
