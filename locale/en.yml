@@ -17,6 +17,7 @@ nodeloc-friend-link:
       less_select: Sorry, maximum 2 images
     notification:
       like: "{username} Like your site"
+      like_label: Someone liked a website you shared
     button:
       share_my_site: Share My Site
       loading: Loading

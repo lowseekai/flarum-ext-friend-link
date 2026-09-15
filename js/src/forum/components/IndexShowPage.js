@@ -1,3 +1,4 @@
+import app from 'flarum/forum/app';
 import Page from 'flarum/common/components/Page';
 import IndexPage from 'flarum/forum/components/IndexPage';
 import listItems from 'flarum/common/helpers/listItems';
