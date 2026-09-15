@@ -35,6 +35,8 @@ nodeloc-friend-link:
       site_name: Site name
       site_url: Site URL
       logo: Site logo
+      choose_file: Choose file
+      no_file_selected: No file selected
       confirm_button: Confirm
       cancel_button: Cancel
       submit_button: Submit

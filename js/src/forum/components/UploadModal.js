@@ -58,12 +58,24 @@ export default class UploadModal extends Modal {
           </div>
           <div className="Form-group">
             <label>{app.translator.trans('nodeloc-friend-link.forum.modal.logo')}</label>
-            <input
-              className="FormControl"
-              type="file"
-              accept="image/jpeg,image/png,image/bmp,image/gif"
-              onchange={(event) => this.selectFile(event)}
-            />
+            <div className="FriendLinkUploadModal-filePicker">
+              <Button className="Button" type="button" onclick={() => this.fileInput?.click()}>
+                {app.translator.trans('nodeloc-friend-link.forum.modal.choose_file')}
+              </Button>
+              <input
+                className="FriendLinkUploadModal-fileInput"
+                type="file"
+                accept="image/jpeg,image/png,image/bmp,image/gif"
+                aria-label={app.translator.trans('nodeloc-friend-link.forum.modal.logo')}
+                oncreate={(vnode) => {
+                  this.fileInput = vnode.dom;
+                }}
+                onchange={(event) => this.selectFile(event)}
+              />
+              <span className="FriendLinkUploadModal-fileName" title={this.file?.name || ''}>
+                {this.file?.name || app.translator.trans('nodeloc-friend-link.forum.modal.no_file_selected')}
+              </span>
+            </div>
           </div>
           {this.previewUrl && (
             <div className="FriendLinkUploadModal-preview">

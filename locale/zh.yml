@@ -35,6 +35,8 @@ nodeloc-friend-link:
       site_name: 网站名称
       site_url: 网站地址
       logo: 网站 Logo
+      choose_file: 选择文件
+      no_file_selected: 未选择任何文件
       confirm_button: 确定
       cancel_button: 取消
       submit_button: 提交

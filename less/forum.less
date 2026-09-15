@@ -223,6 +223,48 @@
   }
 }
 
+.FriendLinkUploadModal-filePicker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 36px;
+  padding: 0 8px;
+  background: var(--control-bg);
+  border: 1px solid var(--control-bg);
+  border-radius: var(--border-radius);
+  box-sizing: border-box;
+
+  &:focus-within {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 1px;
+  }
+
+  .Button {
+    flex: 0 0 auto;
+    padding: 6px 10px;
+    line-height: 20px;
+  }
+}
+
+.FriendLinkUploadModal-fileInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.FriendLinkUploadModal-fileName {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  color: var(--control-color);
+  line-height: 20px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .FriendLinkActionModal .Modal-footer,
 .FriendLinkUploadModal .Modal-footer {
   display: flex;
