@@ -7,7 +7,8 @@
     "type": "flarum-extension",
     "license": "MIT",
     "require": {
-        "flarum/core": "^1.2.0"},
+        "flarum/core": "^2.0.0@beta"
+    },
     "authors": [
         {
             "name": "James",
@@ -28,24 +29,6 @@
                 "name": "fas fa-user-friends",
                 "color": "",
                 "backgroundColor": ""
-            }
-        },
-        "flarum-cli": {
-            "modules": {
-                "admin": true,
-                "forum": true,
-                "js": true,
-                "jsCommon": true,
-                "css": true,
-                "locale": true,
-                "gitConf": true,
-                "githubActions": true,
-                "prettier": true,
-                "typescript": true,
-                "bundlewatch": false,
-                "backendTesting": true,
-                "editorConfig": true,
-                "styleci": true
             }
         }
     },

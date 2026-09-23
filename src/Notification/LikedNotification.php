@@ -1,43 +1,41 @@
 <?php
 
-namespace  Nodeloc\FriendLink\Notification;
+namespace Nodeloc\FriendLink\Notification;
 
+use Flarum\Database\AbstractModel;
 use Flarum\Notification\Blueprint\BlueprintInterface;
+use Flarum\User\User;
 use Nodeloc\FriendLink\Model\FriendLink;
 
 class LikedNotification implements BlueprintInterface
 {
-    public $show;
-
-    public $actor;
-
-    public function __construct($actor, FriendLink $show)
-    {
-        $this->actor=$actor;
-        $this->show=$show;
+    public function __construct(
+        protected User $actor,
+        protected FriendLink $show
+    ) {
     }
 
-    public function getFromUser()
+    public function getFromUser(): ?User
     {
         return $this->actor;
     }
 
-    public function getSubject()
+    public function getSubject(): ?AbstractModel
     {
         return $this->show;
     }
 
-    public function getData()
+    public function getData(): mixed
     {
         return null;
     }
 
-    public static function getType()
+    public static function getType(): string
     {
         return 'friendLinkLiked';
     }
 
-    public static function getSubjectModel()
+    public static function getSubjectModel(): string
     {
         return FriendLink::class;
     }

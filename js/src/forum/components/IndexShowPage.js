@@ -1,299 +1,229 @@
 import app from 'flarum/forum/app';
 import Page from 'flarum/common/components/Page';
-import IndexPage from 'flarum/forum/components/IndexPage';
-import listItems from 'flarum/common/helpers/listItems';
-import FilterMenuItem from './FilterMenuItem';
+import PageStructure from 'flarum/forum/components/PageStructure';
+import IndexSidebar from 'flarum/forum/components/IndexSidebar';
 import Button from 'flarum/common/components/Button';
-import UploadModal from './UploadModal';
 import LoadingIndicator from 'flarum/common/components/LoadingIndicator';
+import Placeholder from 'flarum/common/components/Placeholder';
 import username from 'flarum/common/helpers/username';
-import LoginModal from 'flarum/forum/components/LogInModal';
+import FilterMenuItem from './FilterMenuItem';
+import UploadModal from './UploadModal';
 import HideModal from './HideModal';
 import ApproveModal from './ApproveModal';
-import DeleteModal from "./DeleteModal";
+import DeleteModal from './DeleteModal';
 
 export default class IndexShowPage extends Page {
+  bodyClass = 'App--index';
+
+  openLoginModal() {
+    return app.modal.show(() => import('flarum/forum/components/LogInModal'));
+  }
+
   oninit(vnode) {
     super.oninit(vnode);
-    this.bodyClass = 'App--index';
-    app.setTitle(app.translator.trans(
-      `nodeloc-friend-link.forum.title.page_title`
-    ));
 
-    app.friendLinkListState.refreshParams({
-      filter: {},
-      sort: '-created_time',
-    });
+    app.setTitle(app.translator.trans('nodeloc-friend-link.forum.title.page_title'));
+
+    app.friendLinkListState.refreshParams(
+      {
+        filter: {},
+        sort: '-created_time',
+      },
+      1
+    );
   }
 
   view() {
-    let loading = null;
     const state = app.friendLinkListState;
-    if (state.isInitialLoading() || state.isLoadingNext()) {
-      loading = LoadingIndicator.component({
-        size: 'large',
-      });
-    } else if (state.hasNext()) {
-      loading = Button.component(
-        {
-          className: 'Button',
-          icon: 'fas fa-chevron-down',
-          onclick: state.loadNext.bind(state),
-        },
-        "加载更多"
-      );
-    }
-    if (state.isInitialLoading() && state.isEmpty()) {
-      return <LoadingIndicator/>;
-    }
+    const isLoading = state.isInitialLoading() || state.isLoadingNext();
+
     return (
-      <div className="IndexPage">
-        {IndexPage.prototype.hero()}
-        <div className="container">
-          <div className="sideNavContainer">
-            <nav className="IndexPage-nav sideNav">
-              <ul>{listItems(IndexPage.prototype.sidebarItems().toArray())}</ul>
-            </nav>
-            <div className="IndexPage-results sideNavOffset">
-              <div>
-                <FilterMenuItem
-                  state={state}
-                />
-                <Button
-                  className={`Button friendLink-fresh`}
-                  icon="fas fa-sync"
-                  aria-label="刷新"
-                  onclick={() => {
-                    state.refresh()
-                  }}>
-                </Button>
-                <Button
-                  className={`Button friendLink-upload-botton`}
-                  icon="fas fa-plus"
-                  onclick={() => {
-                    if (!app.session.user) {
-                      app.modal.show(LoginModal)
-                      return;
-                    }
-                    app.modal.show(UploadModal, {
-                      state: state
-                    })
-                  }}>
-                  {app.translator.trans(`nodeloc-friend-link.forum.button.share_my_site`)}
-                </Button>
-              </div>
-              <ul className="FriendLink-SiteList">
-                {
-                  state.getPages().map((pg) => {
-                    return pg.items.map((item) => {
-                      // 检查当前用户是否是管理员
-                      const isAdmin = app.session.user && app.session.user.isAdmin();
-                      const isOwner = app.session.user && item.user().id() === app.session.user.id();
+      <PageStructure className="IndexPage" sidebar={() => <IndexSidebar />}>
+        <div className="IndexPage-toolbar">
+          <ul className="IndexPage-toolbar-view">
+            <li>
+              <FilterMenuItem state={state} />
+            </li>
+          </ul>
+          <ul className="IndexPage-toolbar-action">
+            <li>
+              <Button
+                className="Button Button--icon"
+                icon="fas fa-sync"
+                title={app.translator.trans('nodeloc-friend-link.forum.button.refresh')}
+                aria-label={app.translator.trans('nodeloc-friend-link.forum.button.refresh')}
+                onclick={() => state.refresh()}
+              />
+            </li>
+            <li>
+              <Button
+                className="Button Button--primary"
+                icon="fas fa-plus"
+                onclick={() => {
+                  if (!app.session.user) {
+                    this.openLoginModal();
+                    return;
+                  }
 
-                      // 如果是管理员，或者 item.status() 为真，则渲染该项
-                      return (isAdmin || isOwner || item.status()) && (
-                        <li className="FriendLink-SiteList-item" id={"card-" + item.id()}>
-                          <a href={item.siteurl()} target="_blank" rel="noopener noreferrer"
-                             style="text-decoration: none;">
-                            <div className="FriendLink-SiteList-logo">
-                              <img className="Sitelogo" loading="lazy" src={item.sitelogourl()}/>
-                            </div>
-                            <div className="FriendLink-SiteList-site">
-                              <a href={item.siteurl()} target="_blank" rel="noopener noreferrer">
-                                {item.sitename()}
-                              </a>
-                            </div>
-                            <div className="FriendLink-SiteList-user">
-                              <span className="username">
-                                <a href={app.route('user', { username: item.user().username() })}>{username(item.user())}</a>
-                              </span>
-                            </div>
-                          </a>
-                          <div className="action-buttons">
-                            {this.likeButton(item, state)}
-                            {this.deleteButton(item, this)}
-                            {(() => {
-                              if (item.status() === 2 && isAdmin) {
-                                return this.approveButton(item, this);
-                              }else{
-                                return this.hideButton(item, this);
-                              }
-                            })()}
-
-                          </div>
-                        </li>
-                      );
-                    });
-
-                  })
-                }
-              </ul>
-              {<div className="SupportSearchList-loadMore friendLink-more">{loading}</div>}
-            </div>
-          </div>
+                  app.modal.show(UploadModal, { state });
+                }}
+              >
+                {app.translator.trans('nodeloc-friend-link.forum.button.share_my_site')}
+              </Button>
+            </li>
+          </ul>
         </div>
-      </div>
-    )
+
+        {state.isEmpty() && !isLoading ? (
+          <Placeholder text={app.translator.trans('nodeloc-friend-link.forum.empty')} />
+        ) : (
+          <>
+            <ul className="FriendLink-SiteList" aria-busy={isLoading}>
+              {state.getPages().map((page) => page.items.map((item) => this.itemView(item, state)))}
+            </ul>
+            <div className="SupportSearchList-loadMore friendLink-more">
+              {isLoading ? (
+                <LoadingIndicator />
+              ) : state.hasNext() ? (
+                <Button className="Button" onclick={() => state.loadNext()}>
+                  {app.translator.trans('nodeloc-friend-link.forum.button.load_more')}
+                </Button>
+              ) : null}
+            </div>
+          </>
+        )}
+      </PageStructure>
+    );
   }
 
-  getClass(width, height) {
-    // (/Mobi|Android|iPhone/i.test(navigator.userAgent))
-    if (width > height) {
-      return "tall";
-    }
-    if (height < 1000) {
-      return "tall";
-    }
-    if (height > 1000) {
-      return "taller";
-      ;
-    }
-    return "taller";
-    ;
-  }
+  itemView(item, state) {
+    const user = item.user();
+    const currentUser = app.session.user;
+    const isAdmin = !!currentUser?.isAdmin();
+    const isOwner = !!currentUser && !!user && currentUser.id() === user.id();
 
-  likeStatus(count) {
-    if (count > 0 && count < 1000) {
-      return count
+    if (!isAdmin && !isOwner && !item.status()) {
+      return null;
     }
-    if (count >= 1000) {
-      return count / 1000 + "k"
-    }
-    return ""
-  }
 
-  viewer(item) {
-    var count = item.view_count();
-    if (count >= 1000) {
-      count = count / 1000 + "k";
-    }
     return (
-      <Button
-        className={`Button viewer`}
-        icon={"far fa-eye"}
-        aria-label="浏览量"//防止console报错
-        disable={true}
-      >
-        {count}
-      </Button>
-    )
+      <li className="FriendLink-SiteList-item" key={item.id()} id={`card-${item.id()}`}>
+        <div className="FriendLink-SiteList-logo">
+          <a href={item.siteurl()} target="_blank" rel="noopener noreferrer">
+            <img className="Sitelogo" loading="lazy" src={item.sitelogourl()} alt={item.sitename()} />
+          </a>
+        </div>
+        <div className="FriendLink-SiteList-site">
+          <a href={item.siteurl()} target="_blank" rel="noopener noreferrer">
+            {item.sitename()}
+          </a>
+        </div>
+        {user && (
+          <div className="FriendLink-SiteList-user">
+            <span className="username">
+              <a href={app.route('user', { username: user.username() })}>{username(user)}</a>
+            </span>
+          </div>
+        )}
+        {isAdmin && item.status() === 2 && (
+          <div className="FriendLink-SiteList-status">{app.translator.trans('nodeloc-friend-link.forum.status.pending')}</div>
+        )}
+        <div className="action-buttons">
+          {this.likeButton(item, state)}
+          {this.deleteButton(item, state)}
+          {item.status() === 2 && isAdmin ? this.approveButton(item, state) : this.hideButton(item, state)}
+        </div>
+      </li>
+    );
   }
 
   likeButton(item, state) {
     return (
       <Button
-        className={`Button like`}
-        icon={item.is_my_like() ? "fas fa-thumbs-up" : "far fa-thumbs-up"}
-        aria-label="点赞"//防止console报错
+        className="Button like"
+        icon={item.is_my_like() ? 'fas fa-thumbs-up' : 'far fa-thumbs-up'}
+        aria-label={app.translator.trans('nodeloc-friend-link.forum.button.like')}
         onclick={() => {
           if (!app.session.user) {
-            app.modal.show(LoginModal)
+            this.openLoginModal();
             return;
           }
-          this.like(item.id(), state);
-        }}>
+
+          app
+            .request({
+              method: 'POST',
+              url: `${app.forum.attribute('apiUrl')}/nodeloc/friend_link/like`,
+              body: { show_id: item.id() },
+            })
+            .then((response) => {
+              if (response.status) {
+                item.pushAttributes({
+                  is_my_like: true,
+                  like_count: item.like_count() + 1,
+                });
+                m.redraw();
+              }
+            });
+        }}
+      >
         {this.likeStatus(item.like_count())}
       </Button>
-    )
+    );
   }
 
-  like(show_id, state) {
-    app
-      .request({
-        method: 'POST',
-        url: `${app.forum.attribute('apiUrl')}/nodeloc/friend_link/like`,
-        body: {show_id},
-      })
-      .then((msg) => {
-        if (msg.status) {
-          $("#card-" + show_id + " .action .like i").removeClass("far fa-thumbs-up")
-          $("#card-" + show_id + " .action .like i").addClass("fas fa-thumbs-up")
-          var origin = $("#card-" + show_id + " .action .like span").text();
-          if (!origin) {
-            origin = 0;
-          }
-          var likeNum = parseInt(origin) + 1;
-          if (origin >= 1000) {
-            likeNum = origin / 1000 + "k";
-          }
-          $("#card-" + show_id + " .action .like span").text(likeNum)
-          return;
-        }
-      })
-      .catch((error) => {
-        m.redraw();
-      });
-  }
-
-  deleteButton(item, e) {
-    const isAdmin = app.session.user && app.session.user.isAdmin();
-
-    if (isAdmin || (app.session.user && app.session.user.data.id === item.user().id())) {
-      return (
-        <Button
-          className={`Button bulk`}
-          icon="fas fa-trash"
-          aria-label="删除链接"
-          onclick={() => {
-            if (!app.session.user) {
-              app.modal.show(LoginModal);
-              return;
-            }
-
-            app.modal.show(DeleteModal, {
-              show_id: item.id(),
-            });
-          }}
-        ></Button>
-      );
+  likeStatus(count) {
+    if (count >= 1000) {
+      return `${Math.floor(count / 100) / 10}k`;
     }
+
+    return count || '';
   }
 
-  approveButton(item, e) {
-    const isAdmin = app.session.user && app.session.user.isAdmin();
+  deleteButton(item, state) {
+    const currentUser = app.session.user;
+    const isAllowed = currentUser && (currentUser.isAdmin() || currentUser.id() === item.uid());
 
-    if (isAdmin) {
-      return (
-        <Button
-          className={`Button bulk`}
-          icon="fas fa-check"
-          aria-label="批准"
-          onclick={() => {
-            if (!app.session.user) {
-              app.modal.show(LoginModal);
-              return;
-            }
-
-            app.modal.show(ApproveModal, {
-              show_id: item.id(),
-            });
-          }}
-        ></Button>
-      );
+    if (!isAllowed) {
+      return null;
     }
+
+    return (
+      <Button
+        className="Button bulk"
+        icon="fas fa-trash"
+        aria-label={app.translator.trans('nodeloc-friend-link.forum.button.delete')}
+        onclick={() => app.modal.show(DeleteModal, { show_id: item.id(), state })}
+      />
+    );
   }
-  hideButton(item, e)
-  {
-    const isAdmin = app.session.user && app.session.user.isAdmin();
 
-    if (isAdmin) {
-      return (
-        <Button
-          className={`Button bulk`}
-          icon="fa-solid fa-eye-slash"
-          aria-label="隐藏"
-          onclick={() => {
-            if (!app.session.user) {
-              app.modal.show(LoginModal);
-              return;
-            }
-
-            app.modal.show(HideModal, {
-              show_id: item.id(),
-            });
-          }}
-        ></Button>
-      );
+  approveButton(item, state) {
+    if (!app.session.user?.isAdmin()) {
+      return null;
     }
+
+    return (
+      <Button
+        className="Button bulk"
+        icon="fas fa-check"
+        aria-label={app.translator.trans('nodeloc-friend-link.forum.button.approve')}
+        onclick={() => app.modal.show(ApproveModal, { show_id: item.id(), state })}
+      />
+    );
+  }
+
+  hideButton(item, state) {
+    if (!app.session.user?.isAdmin()) {
+      return null;
+    }
+
+    return (
+      <Button
+        className="Button bulk"
+        icon="fas fa-eye-slash"
+        aria-label={app.translator.trans('nodeloc-friend-link.forum.button.hide')}
+        onclick={() => app.modal.show(HideModal, { show_id: item.id(), state })}
+      />
+    );
   }
 }

@@ -3,166 +3,179 @@
 namespace Nodeloc\FriendLink\Logic;
 
 use Flarum\Foundation\ValidationException;
-use Nodeloc\FriendLink\Model\FriendLink;
 use Illuminate\Contracts\Filesystem\Factory;
 use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Support\Str;
-use Intervention\Image\Image;
-use Intervention\Image\ImageManagerStatic as ImageManagerStatic;
-use Flarum\Foundation\AbstractValidator;
-use Intervention\Image\Exception\NotReadableException;
 use Intervention\Image\ImageManager;
+use Nodeloc\FriendLink\Model\FriendLink;
 use Psr\Http\Message\UploadedFileInterface;
-use Symfony\Component\Mime\MimeTypes;
-use Symfony\Contracts\Translation\TranslatorInterface;
-use Laminas\Diactoros\StreamFactory;
 
 class AddLogic
 {
+    protected Filesystem $uploadDir;
 
-    protected $uploadDir;
-    protected $laravelValidator;
-
-    /**
-     * @var ImageManager
-     */
-    protected $imageManager;
-    public function __construct(Factory $filesystemFactory, ImageManager $imageManager)
-    {
-        $this->imageManager = $imageManager;
+    public function __construct(
+        Factory $filesystemFactory,
+        protected ImageManager $imageManager
+    ) {
         $this->uploadDir = $filesystemFactory->disk('flarum-avatars');
     }
-    public function save($actor, $data,$file)
+
+    public function save($actor, array $data, ?UploadedFileInterface $file): array
     {
-        $msg = ["status" => false, "msg" => ""];
+        $siteName = trim((string) ($data['sitename'] ?? ''));
+        $siteUrl = trim((string) ($data['siteurl'] ?? ''));
 
-        $siteName = isset($data["sitename"]) ? $data["sitename"] : null;
-        $siteUrl = isset($data["siteurl"]) ? $data["siteurl"] : null;
-        if (!$this->validateInput($siteName) || !$this->validateInput($siteUrl)) {
-            throw new ValidationException(['msg' => "输入内容不合法"]);
+        if ($siteName === '' || mb_strlen($siteName) > 100) {
+            throw new ValidationException([
+                'sitename' => '网站名称不能为空，且不能超过 100 个字符。',
+            ]);
         }
 
-        if (!$file) {
-            throw new ValidationException(['msg' => "请选择图片"]);
+        if (! $this->isValidUrl($siteUrl)) {
+            throw new ValidationException([
+                'siteurl' => '请输入有效的网站地址。',
+            ]);
         }
+
+        if (! $file) {
+            throw new ValidationException([
+                'sitelogo' => '请选择网站 Logo。',
+            ]);
+        }
+
         $this->assertFileRequired($file);
         $this->assertFileMimes($file);
         $this->assertFileSize($file);
-        // 使用 ImageManager 创建 Image 实例
 
-        $status = FriendLink::where([
-            "user_id" => $actor->id,
-            "siteurl" => $siteUrl,
-            "status" => 1,
-        ])->first();
+        $exists = FriendLink::where([
+            'user_id' => $actor->id,
+            'siteurl' => $siteUrl,
+            'status' => 1,
+        ])->exists();
 
-        if ($status) {
-            throw new ValidationException(['msg' => "您已分享过此内容"]);
-        }
-        // 处理文件上传
-        try {
-            $uploadedSitelogo = $this->upload($file);
-        } catch (\Exception $e) {
-            throw new ValidationException(['msg' => $e->getMessage()]);
+        if ($exists) {
+            throw new ValidationException([
+                'siteurl' => '您已经分享过这个网站。',
+            ]);
         }
 
-        FriendLink::insert([
-            "user_id" => $actor->id,
-            "status" => 2,
-            "created_time" => time(),
-            "sitename" => $siteName,
-            "siteurl" => $siteUrl,
-            "sitelogourl" => $uploadedSitelogo, // 将上传后的文件路径保存到数据库
+        $uploadedSitelogo = $this->upload($file);
+
+        FriendLink::create([
+            'user_id' => $actor->id,
+            'status' => 2,
+            'created_time' => time(),
+            'update_time' => time(),
+            'sitename' => $siteName,
+            'siteurl' => $siteUrl,
+            'sitelogourl' => $uploadedSitelogo,
+            'img_list' => '',
+            'cover_width' => 100,
+            'cover_height' => 100,
+            'like_count' => 0,
+            'view_count' => 0,
+            'exchange_count' => 0,
         ]);
 
-        $msg["status"] = true;
-        return $msg;
+        return [
+            'status' => true,
+            'msg' => '提交成功，请等待管理员审核。',
+        ];
     }
 
-    function validateInput($input) {
-        // 使用正则表达式匹配输入，只允许中文、英文和数字
-        if (preg_match('/^[a-zA-Z0-9\x{4e00}-\x{9fa5}:\/.]+$/u', $input)) {
-            return true; // 输入合法
-        } else {
-            return false; // 输入包含非法字符
-        }
-    }
-    /**
-     * @param Image $image
-     */
-    public function upload(UploadedFileInterface $file)
+    public function upload(UploadedFileInterface $file): string
     {
-        // 创建StreamFactory实例
-        $streamFactory = new StreamFactory();
-        // 从上传文件创建流
-        $stream = $streamFactory->createStreamFromFile($file->getStream()->getMetadata('uri'));
-        // 使用Intervention Image处理图像
-        $image = ImageManagerStatic ::make($stream)->fit(100, 100)->encode('png');
-        $ext = pathinfo($file->getClientFilename(), PATHINFO_EXTENSION);
-        $filename = Str::random().'.'.$ext;
+        $stream = $file->getStream();
         $stream->rewind();
-        $this->uploadDir->put($filename, $image);
-        return $this->uploadDir->url($filename);
+        $contents = $stream->getContents();
 
+        if ($contents === '') {
+            throw new ValidationException([
+                'sitelogo' => '读取图片失败。',
+            ]);
+        }
+
+        try {
+            $image = $this->imageManager
+                ->read($contents)
+                ->cover(100, 100)
+                ->toPng()
+                ->toString();
+        } catch (\Throwable) {
+            throw new ValidationException([
+                'sitelogo' => '图片处理失败，请更换图片后重试。',
+            ]);
+        }
+
+        $filename = Str::random(40).'.png';
+        $this->uploadDir->put($filename, $image);
+
+        return $this->uploadDir->url($filename);
     }
-    protected function assertFileRequired(UploadedFileInterface $file)
+
+    protected function isValidUrl(string $url): bool
+    {
+        return (bool) filter_var($url, FILTER_VALIDATE_URL)
+            && in_array(strtolower((string) parse_url($url, PHP_URL_SCHEME)), ['http', 'https'], true);
+    }
+
+    protected function assertFileRequired(UploadedFileInterface $file): void
     {
         $error = $file->getError();
 
-        if ($error !== UPLOAD_ERR_OK) {
-            if ($error === UPLOAD_ERR_INI_SIZE || $error === UPLOAD_ERR_FORM_SIZE) {
-                throw new ValidationException(['msg' => 'file_too_large']);
-            }
-
-            if ($error === UPLOAD_ERR_NO_FILE) {
-                throw new ValidationException(['msg' => '图片不能为空']);
-            }
-            throw new ValidationException(['msg' => 'file_upload_failed']);
+        if ($error === UPLOAD_ERR_OK) {
+            return;
         }
+
+        if ($error === UPLOAD_ERR_INI_SIZE || $error === UPLOAD_ERR_FORM_SIZE) {
+            throw new ValidationException([
+                'sitelogo' => '图片文件过大。',
+            ]);
+        }
+
+        if ($error === UPLOAD_ERR_NO_FILE) {
+            throw new ValidationException([
+                'sitelogo' => '图片不能为空。',
+            ]);
+        }
+
+        throw new ValidationException([
+            'sitelogo' => '图片上传失败。',
+        ]);
     }
 
-    protected function assertFileMimes(UploadedFileInterface $file)
+    protected function assertFileMimes(UploadedFileInterface $file): void
     {
-        $allowedTypes = $this->getAllowedTypes();
+        $allowedTypes = ['image/jpeg', 'image/png', 'image/bmp', 'image/gif'];
+        $mime = strtolower((string) $file->getClientMediaType());
+        $extension = strtolower((string) pathinfo((string) $file->getClientFilename(), PATHINFO_EXTENSION));
 
-        // Block PHP files masquerading as images
-        $phpExtensions = ['php', 'php3', 'php4', 'php5', 'phtml'];
-        $fileExtension = pathinfo($file->getClientFilename(), PATHINFO_EXTENSION);
-
-        if (in_array(trim(strtolower($fileExtension)), $phpExtensions)) {
-            throw new ValidationException(['msg' => '文件类型不允许']);
+        if (! in_array($mime, $allowedTypes, true) || in_array($extension, ['php', 'php3', 'php4', 'php5', 'phtml'], true)) {
+            throw new ValidationException([
+                'sitelogo' => '只允许上传 JPG、PNG、BMP 或 GIF 图片。',
+            ]);
         }
 
-        $guessedExtension = MimeTypes::getDefault()->getExtensions($file->getClientMediaType())[0] ?? null;
-
-        if (! in_array($guessedExtension, $allowedTypes)) {
-            throw new ValidationException(['msg' => '文件类型不允许']);
-        }
+        $stream = $file->getStream();
+        $stream->rewind();
+        $contents = $stream->getContents();
 
         try {
-            $this->imageManager->make($file->getStream()->getMetadata('uri'));
-        } catch (NotReadableException $_e) {
-            throw new ValidationException(['msg' => '文件不存在']);
+            $this->imageManager->read($contents);
+        } catch (\Throwable) {
+            throw new ValidationException([
+                'sitelogo' => '上传的文件不是有效图片。',
+            ]);
         }
     }
 
-    protected function assertFileSize(UploadedFileInterface $file)
+    protected function assertFileSize(UploadedFileInterface $file): void
     {
-        $maxSize = $this->getMaxSize();
-
-        if ($file->getSize() > $maxSize) {
-            throw new ValidationException(['msg' => '文件大小'.$file->getSize().'超过'.$maxSize]);
+        if (($file->getSize() ?? 0) > 2 * 1024 * 1024) {
+            throw new ValidationException([
+                'sitelogo' => '图片大小不能超过 2 MB。',
+            ]);
         }
-    }
-
-
-    protected function getMaxSize()
-    {
-        return 24096;
-    }
-
-    protected function getAllowedTypes()
-    {
-        return ['jpeg', 'jpg', 'png', 'bmp', 'gif'];
     }
 }

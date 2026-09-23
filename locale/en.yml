@@ -1,40 +1,45 @@
 nodeloc-friend-link:
-  # For more details on the format
-  # Checkout https://docs.flarum.org/extend/i18n/#appendix-a-standard-key-format
   admin:
-    my_cool_key: My Cool Key
+    my_cool_key: My settings
 
   forum:
     title:
-      page_title: Friend Link
+      page_title: Friend links
       share_my_site: Share my site
     filter:
-      all_label: All
-      score_label: Top
       recent_label: Recent
-      view_label: Viewer
-    alerts:
-      less_select: Sorry, maximum 2 images
+      score_label: Most liked
+    empty: No friend links yet
+    status:
+      pending: Pending review
     notification:
-      like: "{username} Like your site"
-      like_label: Someone liked a website you shared
+      label: Friend link liked
+      like: "{user} liked your shared website"
     button:
-      share_my_site: Share My Site
-      loading: Loading
-      upload: Upload
+      share_my_site: Share website
+      refresh: Refresh
+      load_more: Load more
+      like: Like
+      delete: Delete link
+      approve: Approve
+      hide: Hide link
     tips:
-      upload_tips: Your site won't be see before approve, Please add our link first.
+      upload_tips: Your submission will appear after administrator approval.
+    alerts:
+      required_fields: Enter a site name, site URL, and choose a logo.
+      submit_success: Submitted successfully. Please wait for administrator approval.
+      approve_success: Approved successfully.
+      hide_success: Hidden successfully.
+      delete_success: Deleted successfully.
     modal:
-      error:
-        failed_to_load_cropper: Failed to load the image cropper.
-        generic_resize: Something went wrong while cropping & resizing the image.
-        get_image_data: Failed to crop. Make sure your browser's fingerprinting protection is disabled.
-
-      help_text: >
-        The image upload may fail if your browser's privacy settings are very strict.
-        If you're having trouble, try disabling fingerprinting protection.
-        Otherwise, you can either <disableResize>disable compressing the cropped image</disableResize> or <disableCrop>disable cropping altogether</disableCrop>.
-
-      submit_button: Upload
-      submit_crop_button: Crop & Upload
-
+      site_name: Site name
+      site_url: Site URL
+      logo: Site logo
+      choose_file: Choose file
+      no_file_selected: No file selected
+      confirm_button: Confirm
+      cancel_button: Cancel
+      submit_button: Submit
+      approve_title: Approve friend link
+      hide_title: Hide friend link
+      delete_title: Delete friend link

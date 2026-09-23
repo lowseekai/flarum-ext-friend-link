@@ -1,54 +1,51 @@
-
+import app from 'flarum/forum/app';
 import Modal from 'flarum/common/components/Modal';
 import Button from 'flarum/common/components/Button';
-import Alert from 'flarum/common/components/Alert';
 
+export default class ApproveModal extends Modal {
+  oninit(vnode) {
+    super.oninit(vnode);
+    this.showId = vnode.attrs.show_id;
+    this.state = vnode.attrs.state;
+  }
 
-export default class HideModal extends Modal {
-    oninit(vnode) {
-        super.oninit(vnode);
-        this.show_id = vnode.attrs.show_id;
-    }
+  title() {
+    return app.translator.trans('nodeloc-friend-link.forum.modal.approve_title');
+  }
 
-    title() {
-        return "是否更改状态？";
-    }
+  className() {
+    return 'FriendLinkActionModal Modal--small';
+  }
 
-    className() {
-        return 'ApproveCardLinkModal Modal--small';
-    }
+  content() {
+    return (
+      <div className="Modal-footer">
+        <Button className="Button Button--primary" loading={this.loading} onclick={() => this.approve()}>
+          {app.translator.trans('nodeloc-friend-link.forum.modal.confirm_button')}
+        </Button>
+        <Button className="Button" disabled={this.loading} onclick={() => this.hide()}>
+          {app.translator.trans('nodeloc-friend-link.forum.modal.cancel_button')}
+        </Button>
+      </div>
+    );
+  }
 
-    content() {
-        return(
-            <div className="Modal-footer">
-                 <Button
-                    className={'Button Button--primary m-r-10'}
-                    onclick = {()=>this.approveReq(this.show_id)}
-                >
-                    确定
-                </Button>
-                <Button
-                    className={'Button'}
-                    onclick = {()=>{this.approve()}}
-                >
-                    取消
-                </Button>
-            </div>
-        )
-    }
+  approve() {
+    if (this.loading) return;
 
-    approveReq(show_id){
-        app
-        .request({
-            method: 'POST',
-            url: `${app.forum.attribute('apiUrl')}/nodeloc/friend_link/approve`,
-            body: { show_id },
-        })
-        .then(() => {
-            app.alerts.show(Alert, { type: 'success' }, "审核成功");
-            setTimeout(() => app.alerts.clear(), 3000);
-            this.hide();
-        })
+    this.loading = true;
 
-    }
+    app
+      .request({
+        method: 'POST',
+        url: `${app.forum.attribute('apiUrl')}/nodeloc/friend_link/approve`,
+        body: { show_id: this.showId },
+      })
+      .then(() => {
+        app.alerts.show({ type: 'success' }, app.translator.trans('nodeloc-friend-link.forum.alerts.approve_success'));
+        this.state?.refresh();
+        this.hide();
+      })
+      .finally(() => this.loaded());
+  }
 }

@@ -1,37 +1,45 @@
 nodeloc-friend-link:
   admin:
-    my_cool_key: My Cool Key
+    my_cool_key: 我的设置
 
   forum:
     title:
-      page_title: 酷站
-      share_my_site: 分享我的酷站
-    filter:
-      all_label: 所有
-      score_label: 获赞最多
-      recent_label: 新鲜出炉
-      view_label: 最多翻阅
-    alerts:
-      less_select: 抱歉，最多只能选择 2 张图片
-    notification:
-      like: "{username} 对您分享的网站表示很赞"
-      like_label: 有人对您分享的网站表示很赞
-    button:
+      page_title: 友情链接
       share_my_site: 分享我的网站
-      loading: 上传中
-      upload: 点此上传
+    filter:
+      recent_label: 最新
+      score_label: 最受欢迎
+    empty: 暂无友情链接
+    status:
+      pending: 待审核
+    notification:
+      label: 网站获赞
+      like: "{user} 赞了您分享的网站"
+    button:
+      share_my_site: 分享网站
+      refresh: 刷新
+      load_more: 加载更多
+      like: 点赞
+      delete: 删除链接
+      approve: 通过审核
+      hide: 隐藏链接
     tips:
-      upload_tips: 酷站提交后审核通过才会显示，请先在酷站添加本站链接
+      upload_tips: 提交后需要等待管理员审核。
+    alerts:
+      required_fields: 请填写网站名称、网站地址并选择 Logo。
+      submit_success: 提交成功，请等待管理员审核。
+      approve_success: 审核成功。
+      hide_success: 隐藏成功。
+      delete_success: 删除成功。
     modal:
-      error:
-        failed_to_load_cropper: Failed to load the image cropper.
-        generic_resize: Something went wrong while cropping & resizing the image.
-        get_image_data: Failed to crop. Make sure your browser's fingerprinting protection is disabled.
-
-      help_text: >
-        The image upload may fail if your browser's privacy settings are very strict.
-        If you're having trouble, try disabling fingerprinting protection.
-        Otherwise, you can either <disableResize>disable compressing the cropped image</disableResize> or <disableCrop>disable cropping altogether</disableCrop>.
-
-      submit_button: Upload
-      submit_crop_button: Crop & Upload
+      site_name: 网站名称
+      site_url: 网站地址
+      logo: 网站 Logo
+      choose_file: 选择文件
+      no_file_selected: 未选择任何文件
+      confirm_button: 确定
+      cancel_button: 取消
+      submit_button: 提交
+      approve_title: 通过友情链接审核
+      hide_title: 隐藏友情链接
+      delete_title: 删除友情链接
